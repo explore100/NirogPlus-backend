@@ -7,7 +7,8 @@ import { prisma } from './config/prisma.js';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname } from 'path'; 
+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -167,23 +168,38 @@ router.get('/repair', authenticateToken, authorizeRoles('admin'), async (req, re
 });
 // Admin replies to a support request
 // Admin replies to a support request AND auto-approves it
+// Admin replies
 router.put('/repair/:id/reply', authenticateToken, authorizeRoles('admin'), async (req, res) => {
   const { id } = req.params;
   const { adminMessage } = req.body;
-
   try {
     const updatedRequest = await prisma.supportRequest.update({
-      where: { id },
+      where: { id }, // ✅ String ID
       data: {
         adminMessage,
-        status: 'Approved'  // Automatically change status
+        status: 'Approved',
       },
     });
-
     res.json(updatedRequest);
   } catch (err) {
     console.error('Error replying to request:', err);
     res.status(500).json({ error: 'Failed to send reply' });
+  }
+});
+
+// Admin sends meeting link
+router.put('/repair/:id/link', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  const { id } = req.params;
+  const { linkMessage } = req.body;
+  try {
+    const updatedRequest = await prisma.supportRequest.update({
+      where: { id }, // ✅ String ID
+      data: { linkMessage },
+    });
+    res.json(updatedRequest);
+  } catch (err) {
+    console.error('Error sending link:', err);
+    res.status(500).json({ error: 'Failed to send link' });
   }
 });
 
@@ -209,25 +225,46 @@ router.get('/my-requests', authenticateToken, authorizeRoles('customer'), async 
 
 
 // Add spare part (with image upload)
-router.post('/parts', authenticateToken, authorizeRoles('admin'), upload.single('image'), async (req, res) => {
-  try {
-    const { name, stock } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : null;
+// Add spare part (with image upload)
+router.post(
+  '/parts',
+  authenticateToken,
+  authorizeRoles('admin'),
+  upload.single('image'),
+  async (req, res) => {
+    try {
+      const { name, stock, description } = req.body;
+      const image = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const part = await prisma.sparePart.create({
-      data: {
-        name,
-        stock: parseInt(stock),
-        image
-      }
-    });
+      const part = await prisma.sparePart.create({
+        data: {
+          name,
+          stock: parseInt(stock),
+          description,  // ✅ store description
+          image,
+        },
+      });
 
-    res.status(201).json(part);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to add spare part' });
+      res.status(201).json(part);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Failed to add spare part' });
+    }
   }
+);
+
+router.put('/parts/:id', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  const { stock, description } = req.body;
+  const part = await prisma.sparePart.update({
+    where: { id: parseInt(req.params.id) },
+    data: {
+      stock,
+      description, // ✅ allow admin to update description too
+    },
+  });
+  res.json(part);
 });
+
 
 // Fetch and update routes (already existing)
 router.get('/parts', authenticateToken, authorizeRoles('admin'), async (req, res) => {

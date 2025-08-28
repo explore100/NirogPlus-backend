@@ -31,8 +31,9 @@ model SupportRequest {
   scheduled DateTime
   status    String   @default("pending")
   adminMessage String? 
+  linkMessage  String? 
   createdAt DateTime @default(now())
-  
+  updatedAt    DateTime @updatedAt
 }
 
 model SparePart {
@@ -40,5 +41,6 @@ model SparePart {
   name  String
    stock Int
    image String?
+   description String?
 }
 
