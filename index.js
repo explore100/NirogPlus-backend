@@ -8,7 +8,10 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path'; 
+import diagnosis from './routes/diagnosis.js';
+import dotenv from 'dotenv';
 
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -294,6 +297,7 @@ router.get('/customer/parts', authenticateToken, authorizeRoles('customer'), asy
 
 // Mount router
 app.use('/api', router);
+app.use('/api', diagnosis);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
